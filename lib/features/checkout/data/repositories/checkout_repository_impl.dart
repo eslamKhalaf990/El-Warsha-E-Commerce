@@ -7,20 +7,24 @@ import 'package:warsha_commerce/features/checkout/data/datasources/checkout_remo
 import 'package:warsha_commerce/features/checkout/domain/entities/checkout_order_params.dart';
 import 'package:warsha_commerce/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:warsha_commerce/features/orders/domain/entities/order.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 
 class CheckoutRepositoryImpl implements CheckoutRepository {
   final CheckoutRemoteDataSource remoteDataSource;
   final CatalogRepository catalogRepository;
+  final ShippingRepository shippingRepository;
 
   CheckoutRepositoryImpl({
     required this.remoteDataSource,
     required this.catalogRepository,
+    required this.shippingRepository,
   });
 
   @override
   int calculateDeliveryFee(String governorate) {
-    final feeMajor = Governorates.deliveryFees[governorate] ?? 80;
-    return feeMajor * 100;
+    final price = shippingRepository.getCachedPrice(governorate) ??
+        Governorates.getPrice(governorate);
+    return (price * 100).round();
   }
 
   @override

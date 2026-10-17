@@ -32,6 +32,12 @@ class ApiConstants {
   static const String placeOrder = '/orders/placeOrder';
   static const String customerOrders = '/orders/customer';
 
+  // Governorates & Shipping endpoints
+  static const String governorates = '/governorates';
+  static const String governoratesMap = '/governorates/map';
+  static String governoratePrice(String name) =>
+      '/governorates/price?governorate=${Uri.encodeComponent(name)}';
+
   // Feedback, Reviews & Comments endpoints
   static const String feedbacks = '/feedbacks';
   static const String publicFeedbacks = '/feedbacks/public';

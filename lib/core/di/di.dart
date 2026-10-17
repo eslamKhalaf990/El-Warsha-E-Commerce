@@ -46,6 +46,11 @@ import 'package:warsha_commerce/features/product_details/presentation/cubit/prod
 import 'package:warsha_commerce/features/profile/data/repositories/mock_profile_repository.dart';
 import 'package:warsha_commerce/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:warsha_commerce/features/profile/domain/repositories/profile_repository.dart';
+import 'package:warsha_commerce/features/shipping/data/datasources/shipping_remote_datasource.dart';
+import 'package:warsha_commerce/features/shipping/data/repositories/mock_shipping_repository.dart';
+import 'package:warsha_commerce/features/shipping/data/repositories/shipping_repository_impl.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -67,14 +72,23 @@ Future<void> initDi() async {
 
   // Repositories (swapped via AppConfig.useMockData)
   if (AppConfig.useMockData) {
+    sl.registerLazySingleton<ShippingRepository>(
+      () => MockShippingRepository(),
+    );
     sl.registerLazySingleton<CatalogRepository>(
       () => MockCatalogRepository(debugController: sl()),
     );
     sl.registerLazySingleton<CartRepository>(
-      () => MockCartRepository(debugController: sl()),
+      () => MockCartRepository(
+        debugController: sl(),
+        shippingRepository: sl(),
+      ),
     );
     sl.registerLazySingleton<CheckoutRepository>(
-      () => MockCheckoutRepository(debugController: sl()),
+      () => MockCheckoutRepository(
+        debugController: sl(),
+        shippingRepository: sl(),
+      ),
     );
     sl.registerLazySingleton<OrdersRepository>(
       () => MockOrdersRepository(debugController: sl()),
@@ -92,6 +106,14 @@ Future<void> initDi() async {
       () => MockFeedbackRepository(),
     );
   } else {
+    // Real Shipping & Governorates
+    sl.registerLazySingleton<ShippingRemoteDataSource>(
+      () => ShippingRemoteDataSourceImpl(client: sl()),
+    );
+    sl.registerLazySingleton<ShippingRepository>(
+      () => ShippingRepositoryImpl(remoteDataSource: sl()),
+    );
+
     // Real backend API implementations for Catalog and Home
     sl.registerLazySingleton<CatalogRemoteDataSource>(
       () => CatalogRemoteDataSourceImpl(client: sl()),
@@ -111,6 +133,7 @@ Future<void> initDi() async {
       () => CartRepositoryImpl(
         localDataSource: sl(),
         catalogRepository: sl(),
+        shippingRepository: sl(),
       ),
     );
 
@@ -122,6 +145,7 @@ Future<void> initDi() async {
       () => CheckoutRepositoryImpl(
         remoteDataSource: sl(),
         catalogRepository: sl(),
+        shippingRepository: sl(),
       ),
     );
 
@@ -161,6 +185,9 @@ Future<void> initDi() async {
 
   // Cubits / Blocs
   sl.registerLazySingleton<LocaleCubit>(() => LocaleCubit());
+  sl.registerLazySingleton<ShippingCubit>(
+    () => ShippingCubit(shippingRepository: sl()),
+  );
   sl.registerLazySingleton<CartCubit>(() => CartCubit(cartRepository: sl()));
   sl.registerLazySingleton<AuthCubit>(() => AuthCubit(authRepository: sl()));
   sl.registerFactory<CatalogCubit>(() => CatalogCubit(catalogRepository: sl()));

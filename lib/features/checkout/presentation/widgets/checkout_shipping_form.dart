@@ -15,6 +15,9 @@ import 'package:warsha_commerce/features/auth/presentation/cubit/auth_state.dart
 import 'package:warsha_commerce/features/checkout/presentation/cubit/checkout_cubit.dart';
 import 'package:warsha_commerce/features/checkout/presentation/cubit/checkout_state.dart';
 import 'package:warsha_commerce/features/checkout/presentation/widgets/checkout_auth_card.dart';
+import 'package:warsha_commerce/features/shipping/data/models/governorate_model.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_state.dart';
 
 class CheckoutShippingForm extends StatefulWidget {
   final CheckoutState state;
@@ -310,78 +313,140 @@ class _CheckoutShippingFormState extends State<CheckoutShippingForm> {
   }
 
   Widget _buildGovernorateDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return BlocBuilder<ShippingCubit, ShippingState>(
+      builder: (context, shippingState) {
+        final governoratesList = shippingState.governorates;
+        final isListEmpty = governoratesList.isEmpty;
+        final currentValue = governoratesList.any(
+          (g) => g.governorate == widget.state.governorate,
+        )
+            ? widget.state.governorate
+            : (governoratesList.isNotEmpty
+                ? governoratesList.first.governorate
+                : widget.state.governorate);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Iconsax.map_1, size: 14, color: AppColors.muted),
-            const SizedBox(width: 4),
-            Text(
-              AppStrings.governorate,
-              style: GoogleFonts.cairo(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
+            Row(
+              children: [
+                const Icon(Iconsax.map_1, size: 14, color: AppColors.muted),
+                const SizedBox(width: 4),
+                Text(
+                  AppStrings.governorate,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
+                if (shippingState.isLoading) ...[
+                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.burgundy,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            Container(
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.ivory,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: AppColors.line),
               ),
+              padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: AppSpacing.s12,
+              ),
+
+              alignment: Alignment.center,
+              child: isListEmpty && shippingState.isLoading
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'جاري تحميل المحافظات...',
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.5,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.burgundy,
+                          ),
+                        ),
+                      ],
+                    )
+                  : DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: currentValue,
+                        isExpanded: true,
+                        icon: const Icon(
+                          Iconsax.arrow_down_1,
+                          color: AppColors.deepWine,
+                        ),
+                        dropdownColor: AppColors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.card),
+                        items: (governoratesList.isNotEmpty
+                                ? governoratesList
+                                : Governorates.all
+                                    .map(
+                                      (name) => GovernorateModel(
+                                        governorate: name,
+                                        price: Governorates.getPrice(name),
+                                      ),
+                                    )
+                                    .toList())
+                            .map((govItem) {
+                          return DropdownMenuItem<String>(
+                            value: govItem.governorate,
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  govItem.governorate,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                                Text(
+                                  '${govItem.price.toStringAsFixed(0)} ج.م شحن',
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (selected) {
+                          if (selected != null) {
+                            final priceInMinor =
+                                shippingState.getMinorPriceFor(selected);
+                            widget.cubit.updateGovernorate(selected, priceInMinor);
+                          }
+                        },
+                      ),
+                    ),
             ),
           ],
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 46,
-          decoration: BoxDecoration(
-            color: AppColors.ivory,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.line),
-          ),
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: AppSpacing.s12,
-          ),
-          alignment: Alignment.center,
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: widget.state.governorate,
-              isExpanded: true,
-              icon: const Icon(Iconsax.arrow_down_1, color: AppColors.deepWine),
-              dropdownColor: AppColors.white,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              items: Governorates.all.map((gov) {
-                final fee = Governorates.deliveryFees[gov] ?? 80;
-                return DropdownMenuItem<String>(
-                  value: gov,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        gov,
-                        style: GoogleFonts.cairo(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      Text(
-                        '$fee ج.م شحن',
-                        style: GoogleFonts.cairo(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (selected) {
-                if (selected != null) {
-                  widget.cubit.updateGovernorate(selected);
-                }
-              },
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

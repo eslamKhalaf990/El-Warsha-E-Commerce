@@ -1,34 +1,54 @@
-class Governorates {
-  static const Map<String, int> deliveryFees = {
-    'القاهرة': 80,
-    'الجيزة': 80,
-    'الإسكندرية': 90,
-    'القليوبية': 100,
-    'المنوفية': 100,
-    'الشرقية': 100,
-    'الغربية': 100,
-    'البحيرة': 100,
-    'الدقهلية': 100,
-    'كفر الشيخ': 100,
-    'الإسماعيلية': 100,
-    'السويس': 100,
-    'بورسعيد': 100,
-    'دمياط': 100,
-    'دمياط الجديدة': 100,
-    'الفيوم': 110,
-    'بني سويف': 110,
-    'المنيا': 110,
-    'أسيوط': 120,
-    'سوهاج': 120,
-    'البحر الأحمر': 120,
-    'قنا': 120,
-    'الأقصر': 120,
-    'أسوان': 120,
-    'شمال سيناء': 130,
-    'جنوب سيناء': 130,
-    'مطروح': 130,
-    'الوادي الجديد': 130,
-  };
+import 'package:warsha_commerce/core/di/di.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 
-  static List<String> get all => deliveryFees.keys.toList();
+class Governorates {
+  /// Returns cached governorate list names dynamically from backend API, or fallback list
+  static List<String> get all {
+    if (sl.isRegistered<ShippingRepository>()) {
+      final cached = sl<ShippingRepository>().cachedGovernorates;
+      if (cached != null && cached.isNotEmpty) {
+        return cached.map((g) => g.governorate).toList();
+      }
+    }
+    return const [
+      'القاهرة',
+      'الجيزة',
+      'الإسكندرية',
+      'القليوبية',
+      'المنوفية',
+      'الشرقية',
+      'الغربية',
+      'البحيرة',
+      'الدقهلية',
+      'كفر الشيخ',
+      'الإسماعيلية',
+      'السويس',
+      'بورسعيد',
+      'دمياط',
+      'الفيوم',
+      'بني سويف',
+      'المنيا',
+      'أسيوط',
+      'سوهاج',
+      'البحر الأحمر',
+      'قنا',
+      'الأقصر',
+      'أسوان',
+      'شمال سيناء',
+      'جنوب سيناء',
+      'مطروح',
+      'الوادي الجديد',
+    ];
+  }
+
+  /// Dynamic helper to retrieve price in EGP major units for a given governorate
+  static double getPrice(String governorate) {
+    if (sl.isRegistered<ShippingRepository>()) {
+      final cachedPrice = sl<ShippingRepository>().getCachedPrice(governorate);
+      if (cachedPrice != null) {
+        return cachedPrice;
+      }
+    }
+    return 80.0;
+  }
 }

@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:dartz/dartz.dart' hide Order;
 import 'package:warsha_commerce/core/config/mock_debug_state.dart';
 import 'package:warsha_commerce/core/error/failures.dart';
-import 'package:warsha_commerce/core/utils/governorates.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 import 'package:warsha_commerce/features/checkout/domain/entities/checkout_order_params.dart';
 import 'package:warsha_commerce/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:warsha_commerce/features/orders/data/repositories/mock_orders_repository.dart';
@@ -14,11 +14,14 @@ import 'package:warsha_commerce/features/orders/domain/entities/order_tracking_e
 
 class MockCheckoutRepository implements CheckoutRepository {
   final MockDebugController _debugController;
+  final ShippingRepository? shippingRepository;
   final Random _random = Random();
   static int _orderCounter = 10250;
 
-  MockCheckoutRepository({MockDebugController? debugController})
-    : _debugController = debugController ?? MockDebugController.instance;
+  MockCheckoutRepository({
+    MockDebugController? debugController,
+    this.shippingRepository,
+  }) : _debugController = debugController ?? MockDebugController.instance;
 
   Future<void> _simulateLatency() async {
     final ms = 400 + _random.nextInt(400); // 400-800 ms
@@ -27,10 +30,8 @@ class MockCheckoutRepository implements CheckoutRepository {
 
   @override
   int calculateDeliveryFee(String governorate) {
-    // Delivery fees in Governorates map are in EGP major units
-    // Convert to minor units (piastres = fee * 100)
-    final feeMajor = Governorates.deliveryFees[governorate] ?? 80;
-    return feeMajor * 100;
+    final price = shippingRepository?.getCachedPrice(governorate) ?? 80.0;
+    return (price * 100).round();
   }
 
   @override

@@ -90,8 +90,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(secondaryPhone: value, clearError: true));
   }
 
-  void updateGovernorate(String governorate) {
-    final fee = checkoutRepository.calculateDeliveryFee(governorate);
+  void updateGovernorate(String governorate, [int? deliveryFeeMinor]) {
+    final fee = deliveryFeeMinor ?? checkoutRepository.calculateDeliveryFee(governorate);
     emit(
       state.copyWith(
         governorate: governorate,

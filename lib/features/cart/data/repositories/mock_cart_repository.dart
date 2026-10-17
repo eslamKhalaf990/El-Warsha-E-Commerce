@@ -3,16 +3,15 @@ import 'dart:math';
 import 'package:dartz/dartz.dart';
 import 'package:warsha_commerce/core/config/mock_debug_state.dart';
 import 'package:warsha_commerce/core/error/failures.dart';
-import 'package:warsha_commerce/features/cart/domain/entities/cart_item.dart';
+import 'package:warsha_commerce/core/utils/governorates.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 import 'package:warsha_commerce/features/cart/domain/repositories/cart_repository.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
 
 class MockCartRepository implements CartRepository {
   final MockDebugController _debugController;
+  final ShippingRepository? shippingRepository;
   final Random _random = Random();
-
-  /// Fixed standard shipping fee in minor units: 60 EGP = 6,000 piastres
-  static const int standardShippingFee = 6000;
 
   /// In-memory cart items (defaults to empty unless explicit initial items provided)
   late List<CartItem> _items;
@@ -21,6 +20,7 @@ class MockCartRepository implements CartRepository {
   MockCartRepository({
     MockDebugController? debugController,
     List<CartItem>? initialItems,
+    this.shippingRepository,
   }) : _debugController = debugController ?? MockDebugController.instance {
     resetToInitial(initialItems);
   }
@@ -41,9 +41,11 @@ class MockCartRepository implements CartRepository {
   }
 
   @override
-  int getShippingFee() {
+  int getShippingFee([String governorate = 'القاهرة']) {
     if (_items.isEmpty) return 0;
-    return standardShippingFee;
+    final price = shippingRepository?.getCachedPrice(governorate) ??
+        Governorates.getPrice(governorate);
+    return (price * 100).round();
   }
 
   @override

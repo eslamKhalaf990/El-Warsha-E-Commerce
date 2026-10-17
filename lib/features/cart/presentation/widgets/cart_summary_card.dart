@@ -12,8 +12,12 @@ import 'package:warsha_commerce/core/utils/money.dart';
 import 'package:warsha_commerce/core/widgets/app_button.dart';
 import 'package:warsha_commerce/core/widgets/app_container.dart';
 import 'package:warsha_commerce/core/widgets/app_text.dart';
+import 'package:warsha_commerce/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:warsha_commerce/features/auth/presentation/cubit/auth_state.dart';
 import 'package:warsha_commerce/features/cart/presentation/cubit/cart_cubit.dart';
 import 'package:warsha_commerce/features/cart/presentation/cubit/cart_state.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_state.dart';
 
 class CartSummaryCard extends StatelessWidget {
   const CartSummaryCard({super.key});
@@ -23,220 +27,261 @@ class CartSummaryCard extends StatelessWidget {
     final strings = AppStrings.of(context);
     final isRtl = Directionality.of(context) == TextDirection.rtl;
 
-    return BlocBuilder<CartCubit, CartState>(
-      builder: (context, state) {
-        final isFreeShipping = state.shippingFee == 0;
-        const freeShippingGoal = 100000; // 1,000 EGP
-        final remainingForFreeShipping = freeShippingGoal - state.subtotal;
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, authState) {
+        final govName = authState.customer?.governorate.isNotEmpty == true
+            ? authState.customer!.governorate
+            : 'القاهرة';
 
-        return AppContainer.surface(
-          radius: AppRadius.card,
-          padding: const EdgeInsetsDirectional.all(AppSpacing.s24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              AppText.title(
-                strings.orderSummary,
-                weight: FontWeight.w700,
-                color: AppColors.deepWine,
-              ),
-              const SizedBox(height: AppSpacing.s16),
+        return BlocBuilder<ShippingCubit, ShippingState>(
+          builder: (context, shippingState) {
+            return BlocBuilder<CartCubit, CartState>(
+              builder: (context, cartState) {
+                final isShippingLoading = shippingState.isLoading;
+                final deliveryFeeMinor = cartState.isEmpty
+                    ? 0
+                    : shippingState.getMinorPriceFor(govName);
+                final isFreeShipping = deliveryFeeMinor == 0;
+                const freeShippingGoal = 100000; // 1,000 EGP
+                final remainingForFreeShipping =
+                    freeShippingGoal - cartState.subtotal;
 
-              // Free shipping progress indicator
-              if (remainingForFreeShipping > 0) ...[
-                Container(
-                  padding: const EdgeInsetsDirectional.all(AppSpacing.s12),
-                  decoration: BoxDecoration(
-                    color: AppColors.blush,
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(color: AppColors.line),
-                  ),
+                final totalAmount = cartState.isEmpty
+                    ? 0
+                    : (cartState.subtotal - cartState.discount + deliveryFeeMinor)
+                        .clamp(0, 999999999);
+
+                return AppContainer.surface(
+                  radius: AppRadius.card,
+                  padding: const EdgeInsetsDirectional.all(AppSpacing.s24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Iconsax.truck_fast,
-                            size: 16,
-                            color: AppColors.burgundy,
+                      // Header
+                      AppText.title(
+                        strings.orderSummary,
+                        weight: FontWeight.w700,
+                        color: AppColors.deepWine,
+                      ),
+                      const SizedBox(height: AppSpacing.s16),
+
+                      // Free shipping progress indicator
+                      if (remainingForFreeShipping > 0) ...[
+                        Container(
+                          padding: const EdgeInsetsDirectional.all(
+                            AppSpacing.s12,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              AppStrings.freeShippingRemaining(
-                                MoneyUtils.formatMinor(
-                                  remainingForFreeShipping,
+                          decoration: BoxDecoration(
+                            color: AppColors.blush,
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.card,
+                            ),
+                            border: Border.all(color: AppColors.line),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Iconsax.truck_fast,
+                                    size: 16,
+                                    color: AppColors.burgundy,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      AppStrings.freeShippingRemaining(
+                                        MoneyUtils.formatMinor(
+                                          remainingForFreeShipping,
+                                        ),
+                                      ),
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.burgundy,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.s8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                                child: LinearProgressIndicator(
+                                  value: (cartState.subtotal / freeShippingGoal)
+                                      .clamp(0.0, 1.0),
+                                  backgroundColor: AppColors.white,
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        AppColors.burgundy,
+                                      ),
+                                  minHeight: 6,
                                 ),
                               ),
-                              style: GoogleFonts.cairo(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.burgundy,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s16),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsetsDirectional.all(10.0),
+                          decoration: BoxDecoration(
+                            color: AppStatusColors.successBackground,
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.card,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Iconsax.magic_star,
+                                size: 16,
+                                color: AppStatusColors.successText,
                               ),
+                              const SizedBox(width: 6),
+                              Text(
+                                AppStrings.freeShippingEligible,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppStatusColors.successText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s16),
+                      ],
+
+                      // Breakdown rows
+                      _buildPriceRow(
+                        label: strings.subtotal,
+                        value: MoneyUtils.formatMinor(cartState.subtotal),
+                      ),
+                      const SizedBox(height: AppSpacing.s12),
+
+                      _buildPriceRow(
+                        label: '${strings.shippingFee} ($govName)',
+                        valueWidget: isShippingLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.burgundy,
+                                ),
+                              )
+                            : isFreeShipping
+                            ? Container(
+                                padding: const EdgeInsetsDirectional.symmetric(
+                                  horizontal: AppSpacing.s8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppStatusColors.successBackground,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                ),
+                                child: Text(
+                                  strings.freeShipping,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppStatusColors.successText,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                MoneyUtils.formatMinor(deliveryFeeMinor),
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                      ),
+
+                      if (cartState.discount > 0) ...[
+                        const SizedBox(height: AppSpacing.s12),
+                        _buildPriceRow(
+                          label: strings.discount,
+                          value:
+                              '- ${MoneyUtils.formatMinor(cartState.discount)}',
+                          valueColor: AppColors.burgundy,
+                        ),
+                      ],
+
+                      const Padding(
+                        padding: EdgeInsetsDirectional.symmetric(
+                          vertical: AppSpacing.s16,
+                        ),
+                        child: Divider(color: AppColors.line),
+                      ),
+
+                      // Total Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            strings.total,
+                            style: GoogleFonts.cairo(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.deepWine,
+                            ),
+                          ),
+                          Text(
+                            MoneyUtils.formatMinor(totalAmount),
+                            style: GoogleFonts.cairo(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.burgundy,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: AppSpacing.s24),
+
+                      // Checkout CTA Button (Continue to checkout | كمّل طلبك)
+                      AppButton.primary(
+                        label: AppStrings.continueToCheckout,
+                        height: 52,
+                        trailingIcon: Icon(
+                          isRtl ? Iconsax.arrow_left_2 : Iconsax.arrow_right_3,
+                          size: 20,
+                          color: AppColors.white,
+                        ),
+                        onPressed: cartState.isEmpty
+                            ? null
+                            : () => context.push('/checkout'),
+                      ),
+                      const SizedBox(height: AppSpacing.s16),
+
+                      // Trust badges
+                      _buildTrustPill(
+                        icon: Iconsax.shield_tick,
+                        text: AppStrings.trustSecureCheckoutDesc,
+                      ),
                       const SizedBox(height: AppSpacing.s8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        child: LinearProgressIndicator(
-                          value: (state.subtotal / freeShippingGoal).clamp(
-                            0.0,
-                            1.0,
-                          ),
-                          backgroundColor: AppColors.white,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.burgundy,
-                          ),
-                          minHeight: 6,
-                        ),
+                      _buildTrustPill(
+                        icon: Iconsax.refresh_2,
+                        text: AppStrings.trustEasyExchangeDesc,
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      _buildTrustPill(
+                        icon: Iconsax.gift,
+                        text: AppStrings.trustFreeWrappingTitle,
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.s16),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsetsDirectional.all(10.0),
-                  decoration: BoxDecoration(
-                    color: AppStatusColors.successBackground,
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Iconsax.magic_star,
-                        size: 16,
-                        color: AppStatusColors.successText,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppStrings.freeShippingEligible,
-                        style: GoogleFonts.cairo(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppStatusColors.successText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.s16),
-              ],
-
-              // Breakdown rows
-              _buildPriceRow(
-                label: strings.subtotal,
-                value: MoneyUtils.formatMinor(state.subtotal),
-              ),
-              const SizedBox(height: AppSpacing.s12),
-
-              _buildPriceRow(
-                label: strings.shippingFee,
-                valueWidget: isFreeShipping
-                    ? Container(
-                        padding: const EdgeInsetsDirectional.symmetric(
-                          horizontal: AppSpacing.s8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppStatusColors.successBackground,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          strings.freeShipping,
-                          style: GoogleFonts.cairo(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppStatusColors.successText,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        MoneyUtils.formatMinor(state.shippingFee),
-                        style: GoogleFonts.cairo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.ink,
-                        ),
-                      ),
-              ),
-
-              if (state.discount > 0) ...[
-                const SizedBox(height: AppSpacing.s12),
-                _buildPriceRow(
-                  label: strings.discount,
-                  value: '- ${MoneyUtils.formatMinor(state.discount)}',
-                  valueColor: AppColors.burgundy,
-                ),
-              ],
-
-              const Padding(
-                padding: EdgeInsetsDirectional.symmetric(
-                  vertical: AppSpacing.s16,
-                ),
-                child: Divider(color: AppColors.line),
-              ),
-
-              // Total Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    strings.total,
-                    style: GoogleFonts.cairo(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.deepWine,
-                    ),
-                  ),
-                  Text(
-                    MoneyUtils.formatMinor(state.total),
-                    style: GoogleFonts.cairo(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.burgundy,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.s24),
-
-              // Checkout CTA Button (Continue to checkout | كمّل طلبك)
-              AppButton.primary(
-                label: AppStrings.continueToCheckout,
-                height: 52,
-                trailingIcon: Icon(
-                  isRtl ? Iconsax.arrow_left_2 : Iconsax.arrow_right_3,
-                  size: 20,
-                  color: AppColors.white,
-                ),
-                onPressed: state.isEmpty
-                    ? null
-                    : () => context.push('/checkout'),
-              ),
-              const SizedBox(height: AppSpacing.s16),
-
-              // Trust badges
-              _buildTrustPill(
-                icon: Iconsax.shield_tick,
-                text: AppStrings.trustSecureCheckoutDesc,
-              ),
-              const SizedBox(height: AppSpacing.s8),
-              _buildTrustPill(
-                icon: Iconsax.refresh_2,
-                text: AppStrings.trustEasyExchangeDesc,
-              ),
-              const SizedBox(height: AppSpacing.s8),
-              _buildTrustPill(
-                icon: Iconsax.gift,
-                text: AppStrings.trustFreeWrappingTitle,
-              ),
-            ],
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );

@@ -12,6 +12,8 @@ import 'package:warsha_commerce/core/widgets/app_container.dart';
 import 'package:warsha_commerce/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:warsha_commerce/features/auth/presentation/cubit/auth_state.dart';
 import 'package:warsha_commerce/features/checkout/presentation/cubit/checkout_cubit.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_state.dart';
 
 class CheckoutAuthCard extends StatefulWidget {
   final CheckoutCubit checkoutCubit;
@@ -496,48 +498,59 @@ class _CheckoutAuthCardState extends State<CheckoutAuthCard> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: AppColors.ivory,
-                      borderRadius: BorderRadius.circular(AppRadius.card),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 10,
-                    ),
-                    alignment: Alignment.center,
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _signupGovernorate,
-                        isExpanded: true,
-                        icon: const Icon(
-                          Iconsax.arrow_down_1,
-                          size: 16,
-                          color: AppColors.deepWine,
+                  BlocBuilder<ShippingCubit, ShippingState>(
+                    builder: (context, shippingState) {
+                      final options = shippingState.governorateNames.isNotEmpty
+                          ? shippingState.governorateNames
+                          : Governorates.all;
+                      final currentValue = options.contains(_signupGovernorate)
+                          ? _signupGovernorate
+                          : (options.isNotEmpty ? options.first : 'القاهرة');
+
+                      return Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: AppColors.ivory,
+                          borderRadius: BorderRadius.circular(AppRadius.card),
+                          border: Border.all(color: AppColors.line),
                         ),
-                        items: Governorates.all.map((gov) {
-                          return DropdownMenuItem<String>(
-                            value: gov,
-                            child: Text(
-                              gov,
-                              style: GoogleFonts.cairo(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.ink,
-                              ),
+                        padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 10,
+                        ),
+                        alignment: Alignment.center,
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: currentValue,
+                            isExpanded: true,
+                            icon: const Icon(
+                              Iconsax.arrow_down_1,
+                              size: 16,
+                              color: AppColors.deepWine,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (selected) {
-                          if (selected != null) {
-                            setState(() {
-                              _signupGovernorate = selected;
-                            });
-                          }
-                        },
-                      ),
-                    ),
+                            items: options.map((gov) {
+                              return DropdownMenuItem<String>(
+                                value: gov,
+                                child: Text(
+                                  gov,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (selected) {
+                              if (selected != null) {
+                                setState(() {
+                                  _signupGovernorate = selected;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

@@ -1,7 +1,8 @@
 import 'dart:math';
 
 import 'package:dartz/dartz.dart';
-import 'package:warsha_commerce/core/error/failures.dart';
+import 'package:warsha_commerce/core/utils/governorates.dart';
+import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 import 'package:warsha_commerce/features/cart/data/datasources/cart_local_datasource.dart';
 import 'package:warsha_commerce/features/cart/domain/entities/cart_item.dart';
 import 'package:warsha_commerce/features/cart/domain/repositories/cart_repository.dart';
@@ -11,8 +12,7 @@ import 'package:warsha_commerce/features/catalog/domain/repositories/catalog_rep
 class CartRepositoryImpl implements CartRepository {
   final CartLocalDataSource localDataSource;
   final CatalogRepository? catalogRepository;
-
-  static const int standardShippingFee = 6000; // 60 EGP in minor units (piastres)
+  final ShippingRepository? shippingRepository;
 
   List<CartItem> _items = <CartItem>[];
   String? _appliedPromoCode;
@@ -20,6 +20,7 @@ class CartRepositoryImpl implements CartRepository {
   CartRepositoryImpl({
     required this.localDataSource,
     this.catalogRepository,
+    this.shippingRepository,
   });
 
   @override
@@ -28,9 +29,11 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  int getShippingFee() {
+  int getShippingFee([String governorate = 'القاهرة']) {
     if (_items.isEmpty) return 0;
-    return standardShippingFee;
+    final price = shippingRepository?.getCachedPrice(governorate) ??
+        Governorates.getPrice(governorate);
+    return (price * 100).round();
   }
 
   @override

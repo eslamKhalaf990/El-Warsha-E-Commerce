@@ -9,6 +9,7 @@ import 'package:warsha_commerce/core/router/app_router.dart';
 import 'package:warsha_commerce/core/theme/app_theme.dart';
 import 'package:warsha_commerce/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:warsha_commerce/features/cart/presentation/cubit/cart_cubit.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,9 @@ class EcommerceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<ShippingCubit>(
+          create: (_) => sl<ShippingCubit>()..loadGovernorates(),
+        ),
         BlocProvider<CartCubit>(create: (_) => sl<CartCubit>()..loadCart()),
         BlocProvider<AuthCubit>(create: (_) => sl<AuthCubit>()..checkAuth()),
         BlocProvider<LocaleCubit>(create: (_) => sl<LocaleCubit>()),
