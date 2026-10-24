@@ -53,11 +53,11 @@ enum OrderStatus {
   };
 
   /// Single place to map backend API status strings to the enum.
-  /// To be updated when backend establishes exact status strings.
+  /// Backend v2 statuses: Pending, Processing, Shipped, Completed, Cancelled.
   static OrderStatus fromBackendString(String value) {
     return switch (value.trim().toLowerCase()) {
       'placed' || 'pending' || 'جديد' => OrderStatus.placed,
-      'confirmed' || 'مؤكد' => OrderStatus.confirmed,
+      'confirmed' || 'processing' || 'مؤكد' => OrderStatus.confirmed,
       'packed' || 'جاهز' => OrderStatus.packed,
       'shipped' ||
       'out_for_delivery' ||

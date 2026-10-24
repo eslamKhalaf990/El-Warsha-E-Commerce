@@ -29,8 +29,8 @@ class ApiConstants {
       '/products/getImage?filename=$filename';
 
   // Orders endpoints
-  static const String placeOrder = '/orders/placeOrder';
-  static const String customerOrders = '/orders/customer';
+  static const String placeOrder = '/orders/checkout';
+  static const String customerOrders = '/orders/mine';
 
   // Governorates & Shipping endpoints
   static const String governorates = '/governorates';

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart' hide Order;
 import 'package:dio/dio.dart';
+import 'package:warsha_commerce/core/error/api_error_mapper.dart';
 import 'package:warsha_commerce/core/error/failures.dart';
 import 'package:warsha_commerce/features/orders/data/datasources/orders_remote_datasource.dart';
 import 'package:warsha_commerce/features/orders/domain/entities/order.dart';
@@ -16,10 +17,7 @@ class OrdersRepositoryImpl implements OrdersRepository {
       final orders = await remoteDataSource.getCustomerOrders();
       return Right(orders);
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        return const Left(UnauthorizedFailure());
-      }
-      return Left(ServerFailure(e.message ?? 'Failed to load customer orders'));
+      return Left(failureFromDio(e, fallback: 'Failed to load customer orders'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

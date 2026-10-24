@@ -69,11 +69,15 @@ class OrderModel extends Order {
     final discountMinor = (discountDouble * 100).round();
 
     final deliveryDouble =
-        (json['delivery'] ?? json['deliveryFee'] as num?)?.toDouble() ?? 0.0;
+        ((json['delivery'] ?? json['deliveryFee']) as num?)?.toDouble() ?? 0.0;
     final deliveryMinor = (deliveryDouble * 100).round();
 
+    // Backend v2 sends amountDue (what is left to pay on delivery); totalPrice is
+    // the same value, kept for older servers.
     final totalPriceDouble =
-        (json['totalPrice'] ?? json['total'] as num?)?.toDouble() ?? 0.0;
+        ((json['amountDue'] ?? json['totalPrice'] ?? json['total']) as num?)
+            ?.toDouble() ??
+        0.0;
     final totalPriceMinor = (totalPriceDouble * 100).round();
 
     final downPaymentDouble = (json['downPayment'] as num?)?.toDouble() ?? 0.0;
