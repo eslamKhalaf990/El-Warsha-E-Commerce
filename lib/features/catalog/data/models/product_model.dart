@@ -1,3 +1,4 @@
+import 'package:warsha_commerce/features/catalog/data/models/product_variant_model.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
 
 class ProductModel extends Product {
@@ -5,6 +6,8 @@ class ProductModel extends Product {
     required super.id,
     required super.name,
     required super.description,
+    super.nameAr,
+    super.descriptionAr,
     super.buyingPrice,
     required super.sellingPrice,
     required super.discount,
@@ -14,6 +17,8 @@ class ProductModel extends Product {
     required super.quantity,
     required super.categoryName,
     required super.categoryId,
+    super.variants,
+    super.images,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +51,8 @@ class ProductModel extends Product {
       id: (json['id'] ?? json['productId'] ?? 0) as int,
       name: (json['name'] ?? json['productName'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
+      nameAr: (json['nameAr'] ?? '').toString(),
+      descriptionAr: (json['descriptionAr'] ?? '').toString(),
       // buyingPrice omitted per spec (internal cost price never exposed)
       buyingPrice: null,
       sellingPrice: sellingPriceMinor,
@@ -56,6 +63,16 @@ class ProductModel extends Product {
       quantity: parsedQty,
       categoryId: (json['categoryId'] as num?)?.toInt() ?? 0,
       categoryName: (json['categoryName'] ?? '').toString(),
+      variants: (json['variants'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(ProductVariantModel.fromJson)
+          .toList(),
+      // Gallery images arrive as [{id, imageUrl, sortOrder}] already in display order
+      images: (json['images'] as List? ?? const [])
+          .map((i) => i is Map ? i['imageUrl']?.toString() : i?.toString())
+          .whereType<String>()
+          .where((url) => url.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -64,6 +81,8 @@ class ProductModel extends Product {
       'id': id,
       'name': name,
       'description': description,
+      'nameAr': nameAr,
+      'descriptionAr': descriptionAr,
       'sellingPrice': sellingPrice / 100.0,
       'discount': discount / 100.0,
       'totalPrice': totalPrice / 100.0,
@@ -72,6 +91,8 @@ class ProductModel extends Product {
       'quantity': quantity.toString(),
       'categoryId': categoryId,
       'categoryName': categoryName,
+      'variants': variants.map(ProductVariantModel.toJsonOf).toList(),
+      'images': [for (final url in images) {'imageUrl': url}],
     };
   }
 }

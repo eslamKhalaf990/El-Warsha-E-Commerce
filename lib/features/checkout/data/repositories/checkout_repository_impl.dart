@@ -24,7 +24,8 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
   @override
   int calculateDeliveryFee(String governorate) {
     final price = shippingRepository.getCachedPrice(governorate) ??
-        Governorates.getPrice(governorate);
+        Governorates.getPrice(governorate) ??
+        0;
     return (price * 100).round();
   }
 
@@ -39,15 +40,22 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       final reconciliationError = productResult.fold(
         (failure) => null, // If network lookup fails, allow server to validate
         (freshProduct) {
-          if (freshProduct.quantity > 0 &&
-              freshProduct.quantity < item.quantity) {
+          final freshVariant = freshProduct.variantById(item.variantId);
+          if (item.variantId != null && freshVariant == null) {
             return OutOfStockFailure(
-              'الكمية المطلوبة من "${item.product.name}" غير متوفرة حالياً (المتوفر: ${freshProduct.quantity})',
+              'المقاس/اللون اللي اخترته من "${item.product.nameFor('ar')}" مبقاش متاح. شيله من السلة واختار تاني',
             );
           }
-          if (freshProduct.totalPrice != item.product.totalPrice) {
+          final stock = freshVariant?.quantity ?? freshProduct.quantity;
+          if (stock > 0 && stock < item.quantity) {
             return OutOfStockFailure(
-              'تغير سعر المنتج "${item.product.name}". يرجى مراجعة السلة لتحديث الأسعار',
+              'الكمية المطلوبة من "${item.product.nameFor('ar')}" غير متوفرة حالياً (المتوفر: $stock)',
+            );
+          }
+          final freshPrice = freshVariant?.totalPrice ?? freshProduct.totalPrice;
+          if (freshPrice != item.unitPrice) {
+            return OutOfStockFailure(
+              'تغير سعر المنتج "${item.product.nameFor('ar')}". يرجى مراجعة السلة لتحديث الأسعار',
             );
           }
           return null;

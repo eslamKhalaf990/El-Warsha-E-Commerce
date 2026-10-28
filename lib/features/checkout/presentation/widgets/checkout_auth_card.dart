@@ -6,7 +6,6 @@ import 'package:iconsax/iconsax.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
 import 'package:warsha_commerce/core/theme/app_spacing.dart';
-import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/core/widgets/app_button.dart';
 import 'package:warsha_commerce/core/widgets/app_container.dart';
 import 'package:warsha_commerce/features/auth/presentation/cubit/auth_cubit.dart';
@@ -39,7 +38,7 @@ class _CheckoutAuthCardState extends State<CheckoutAuthCard> {
   final TextEditingController _signupCityController = TextEditingController();
   final TextEditingController _signupAddressController =
       TextEditingController();
-  String _signupGovernorate = 'القاهرة';
+  String? _signupGovernorate;
 
   // OTP & Reset Controllers
   final TextEditingController _otpController = TextEditingController();
@@ -500,12 +499,10 @@ class _CheckoutAuthCardState extends State<CheckoutAuthCard> {
                   const SizedBox(height: 6),
                   BlocBuilder<ShippingCubit, ShippingState>(
                     builder: (context, shippingState) {
-                      final options = shippingState.governorateNames.isNotEmpty
-                          ? shippingState.governorateNames
-                          : Governorates.all;
+                      final options = shippingState.governorateNames;
                       final currentValue = options.contains(_signupGovernorate)
                           ? _signupGovernorate
-                          : (options.isNotEmpty ? options.first : 'القاهرة');
+                          : (options.isNotEmpty ? options.first : null);
 
                       return Container(
                         height: 46,
@@ -601,7 +598,8 @@ class _CheckoutAuthCardState extends State<CheckoutAuthCard> {
               phone: phone,
               email: email,
               password: password,
-              governorate: _signupGovernorate,
+              governorate: _signupGovernorate ??
+                  (context.read<ShippingCubit>().state.governorateNames.firstOrNull ?? ''),
               city: _signupCityController.text.trim(),
               address: address,
             );

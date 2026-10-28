@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
@@ -62,12 +63,17 @@ class _ProductCardState extends State<ProductCard>
 
   void _onAddToCart(BuildContext context) {
     if (widget.product.isOutOfStock) return;
+    if (widget.product.hasVariants) {
+      // A size/color has to be chosen on the product page first
+      context.push('/product/${widget.product.id}');
+      return;
+    }
     context.read<CartCubit>().addToCart(widget.product);
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.product.name} - ${AppStrings.addedToCart}'),
+        content: Text('${widget.product.localizedName(context)} - ${AppStrings.addedToCart}'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -312,7 +318,7 @@ class _ProductCardState extends State<ProductCard>
           ),
           const SizedBox(height: AppSpacing.s4),
           AppText.titleSmall(
-            product.name,
+            product.localizedName(context),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
@@ -54,7 +55,7 @@ class ProductInfoSection extends StatelessWidget {
 
         // Product Name
         Text(
-          product.name,
+          product.localizedName(context),
           style: GoogleFonts.cairo(
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -186,7 +187,7 @@ class ProductInfoSection extends StatelessWidget {
 
         // Short Description Paragraph
         AppText.body(
-          product.description,
+          product.localizedDescription(context),
           color: AppColors.deepWine.withValues(alpha: 0.85),
         ),
       ],

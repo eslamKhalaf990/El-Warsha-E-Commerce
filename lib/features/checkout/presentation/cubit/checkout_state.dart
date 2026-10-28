@@ -30,7 +30,7 @@ class CheckoutState extends Equatable {
     this.addressLine = '',
     this.notes = '',
     this.paymentMethod = 'Instapay',
-    this.deliveryFee = 8000, // 80 EGP default
+    this.deliveryFee = 0, // set from the live price list
     this.downPayment = 0,
     this.depositReceipt,
     this.placedOrder,

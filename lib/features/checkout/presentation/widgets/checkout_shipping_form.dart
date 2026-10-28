@@ -7,7 +7,6 @@ import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
 import 'package:warsha_commerce/core/theme/app_spacing.dart';
-import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/core/widgets/app_container.dart';
 import 'package:warsha_commerce/core/widgets/app_text.dart';
 import 'package:warsha_commerce/features/auth/presentation/cubit/auth_cubit.dart';
@@ -15,7 +14,6 @@ import 'package:warsha_commerce/features/auth/presentation/cubit/auth_state.dart
 import 'package:warsha_commerce/features/checkout/presentation/cubit/checkout_cubit.dart';
 import 'package:warsha_commerce/features/checkout/presentation/cubit/checkout_state.dart';
 import 'package:warsha_commerce/features/checkout/presentation/widgets/checkout_auth_card.dart';
-import 'package:warsha_commerce/features/shipping/data/models/governorate_model.dart';
 import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
 import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_state.dart';
 
@@ -397,17 +395,7 @@ class _CheckoutShippingFormState extends State<CheckoutShippingForm> {
                         ),
                         dropdownColor: AppColors.white,
                         borderRadius: BorderRadius.circular(AppRadius.card),
-                        items: (governoratesList.isNotEmpty
-                                ? governoratesList
-                                : Governorates.all
-                                    .map(
-                                      (name) => GovernorateModel(
-                                        governorate: name,
-                                        price: Governorates.getPrice(name),
-                                      ),
-                                    )
-                                    .toList())
-                            .map((govItem) {
+                        items: governoratesList.map((govItem) {
                           return DropdownMenuItem<String>(
                             value: govItem.governorate,
                             child: Row(

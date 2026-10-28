@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -29,7 +30,14 @@ class CheckoutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<CheckoutCubit>(
-      create: (_) => sl<CheckoutCubit>()..initCheckout(),
+      create: (context) {
+        final cubit = sl<CheckoutCubit>()..initCheckout();
+        // Delivery prices can change in the ERP at any time: reload them on every checkout
+        context.read<ShippingCubit>().refresh().whenComplete(() {
+          if (!cubit.isClosed) cubit.refreshDeliveryFee();
+        });
+        return cubit;
+      },
       child: const _CheckoutPageContent(),
     );
   }

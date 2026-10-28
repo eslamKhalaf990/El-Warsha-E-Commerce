@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/features/cart/domain/entities/cart_item.dart';
 import 'package:warsha_commerce/features/checkout/domain/entities/checkout_order_params.dart';
@@ -27,7 +28,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     profileResult.fold(
       (failure) {
         // Fallback default
-        final initialFee = checkoutRepository.calculateDeliveryFee('القاهرة');
+        final initialFee = checkoutRepository.calculateDeliveryFee(_defaultGovernorate);
         emit(
           state.copyWith(
             status: CheckoutStatus.initial,
@@ -44,7 +45,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   void populateFromCustomer(Customer customer) {
     final gov = customer.governorate.isNotEmpty
         ? customer.governorate
-        : 'القاهرة';
+        : _defaultGovernorate;
     final initialFee = checkoutRepository.calculateDeliveryFee(gov);
 
     emit(
@@ -60,6 +61,18 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         clearError: true,
       ),
     );
+  }
+
+  /// First governorate in the live price list, used until the customer picks one.
+  String get _defaultGovernorate => Governorates.all.isEmpty ? '' : Governorates.all.first;
+
+  /// Re-reads the delivery fee after the price list was refreshed.
+  void refreshDeliveryFee() {
+    final gov = state.governorate.isNotEmpty ? state.governorate : _defaultGovernorate;
+    emit(state.copyWith(
+      governorate: gov,
+      deliveryFee: checkoutRepository.calculateDeliveryFee(gov),
+    ));
   }
 
   void clearCustomerDetails() {

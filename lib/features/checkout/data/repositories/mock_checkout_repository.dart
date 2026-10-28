@@ -54,7 +54,7 @@ class MockCheckoutRepository implements CheckoutRepository {
             productId: cartItem.product.id,
             productName: cartItem.product.name,
             quantity: cartItem.quantity,
-            unitPrice: cartItem.product.totalPrice,
+            unitPrice: cartItem.unitPrice,
             totalPrice: cartItem.totalPrice,
             imageUrl: cartItem.product.imageUrl,
           );

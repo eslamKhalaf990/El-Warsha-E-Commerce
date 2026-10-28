@@ -32,7 +32,11 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
       'downPayment': params.downPayment / 100.0,
       'items': [
         for (final item in params.cartItems)
-          {'productId': item.product.id, 'quantity': item.quantity},
+          {
+            'productId': item.product.id,
+            if (item.variantId != null) 'variantId': item.variantId,
+            'quantity': item.quantity,
+          },
       ],
     };
 

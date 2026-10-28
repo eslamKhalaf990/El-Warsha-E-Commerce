@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:warsha_commerce/core/error/failures.dart';
+import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/network/dio_client.dart';
+import 'package:warsha_commerce/features/auth/data/auth_error_mapper.dart';
 import 'package:warsha_commerce/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:warsha_commerce/features/auth/domain/repositories/auth_repository.dart';
 import 'package:warsha_commerce/features/profile/domain/entities/address.dart';
@@ -58,16 +60,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Right(customer);
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403) {
-        final body = e.response?.data?.toString() ?? 'الحساب يحتاج إلى تفعيل';
-        return Left(AccountPendingFailure(body, email));
-      }
-      if (e.response?.statusCode == 401) {
-        return const Left(AuthFailure('البريد الإلكتروني أو كلمة المرور غير صحيحة'));
-      }
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.login, email: email));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -95,9 +90,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return Right(msg);
     } on DioException catch (e) {
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.signUp));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -110,9 +105,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final msg = await remoteDataSource.verifyOtp(email: email, otp: otp);
       return Right(msg);
     } on DioException catch (e) {
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.verifyOtp));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -122,9 +117,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final msg = await remoteDataSource.resendOtp(email: email);
       return Right(msg);
     } on DioException catch (e) {
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.resendOtp));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -134,9 +129,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final msg = await remoteDataSource.forgotPassword(email: email);
       return Right(msg);
     } on DioException catch (e) {
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.forgotPassword));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -154,9 +149,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return Right(msg);
     } on DioException catch (e) {
-      return Left(_mapDioError(e));
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(authFailureFromDio(e, AuthAction.resetPassword));
+    } catch (_) {
+      return const Left(ServerFailure(AppStrings.loadingError));
     }
   }
 
@@ -173,26 +168,5 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     await sharedPreferences.remove(DioClient.tokenKey);
     await profileRepository.clearProfile();
-  }
-
-  Failure _mapDioError(DioException e) {
-    final status = e.response?.statusCode;
-    final data = e.response?.data;
-    final message = (data is String)
-        ? data
-        : (data is Map && data['message'] != null)
-            ? data['message'].toString()
-            : e.message ?? 'حدث خطأ في الاتصال بالخادم';
-
-    if (status == 400) {
-      return ValidationFailure(message);
-    }
-    if (status == 401) {
-      return const AuthFailure('انتهت صلاحية الجلسة، يرجى تسجيل الدخول مجدداً');
-    }
-    if (status == 403) {
-      return ValidationFailure(message);
-    }
-    return ServerFailure(message);
   }
 }

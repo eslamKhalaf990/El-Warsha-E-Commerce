@@ -25,12 +25,25 @@ sealed class Failure extends Equatable {
       return message;
     }
 
+    // Never show raw server output (JSON bodies, exception names, stack traces)
+    if (_looksTechnical(message)) {
+      return this is ValidationFailure ? AppStrings.validationError : AppStrings.loadingError;
+    }
+
     if (this is ValidationFailure || this is AuthFailure) {
       return message.isNotEmpty ? message : AppStrings.validationError;
     }
 
     return AppStrings.loadingError;
   }
+
+  static final _technical = RegExp(
+    r'exception|error:|stack|sql|constraint|status code|^\s*[\[{]|java\.|dio|null',
+    caseSensitive: false,
+  );
+
+  static bool _looksTechnical(String message) =>
+      message.length > 160 || _technical.hasMatch(message);
 
   @override
   List<Object?> get props => [message];

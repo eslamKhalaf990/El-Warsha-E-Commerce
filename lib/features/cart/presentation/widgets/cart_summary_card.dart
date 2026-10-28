@@ -29,19 +29,23 @@ class CartSummaryCard extends StatelessWidget {
 
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
-        final govName = authState.customer?.governorate.isNotEmpty == true
-            ? authState.customer!.governorate
-            : 'القاهرة';
+        final customerGov = authState.customer?.governorate ?? '';
+
 
         return BlocBuilder<ShippingCubit, ShippingState>(
           builder: (context, shippingState) {
             return BlocBuilder<CartCubit, CartState>(
               builder: (context, cartState) {
                 final isShippingLoading = shippingState.isLoading;
-                final deliveryFeeMinor = cartState.isEmpty
+                // Until the customer has a governorate, show the first one in the live list
+                final govName = customerGov.isNotEmpty
+                    ? customerGov
+                    : (shippingState.governorateNames.firstOrNull ?? '');
+                final knownFeeMinor = cartState.isEmpty
                     ? 0
                     : shippingState.getMinorPriceFor(govName);
-                final isFreeShipping = deliveryFeeMinor == 0;
+                final deliveryFeeMinor = knownFeeMinor ?? 0;
+                final isFreeShipping = knownFeeMinor == 0;
                 const freeShippingGoal = 100000; // 1,000 EGP
                 final remainingForFreeShipping =
                     freeShippingGoal - cartState.subtotal;
@@ -164,7 +168,9 @@ class CartSummaryCard extends StatelessWidget {
                       const SizedBox(height: AppSpacing.s12),
 
                       _buildPriceRow(
-                        label: '${strings.shippingFee} ($govName)',
+                        label: govName.isEmpty
+                            ? strings.shippingFee
+                            : '${strings.shippingFee} ($govName)',
                         valueWidget: isShippingLoading
                             ? const SizedBox(
                                 width: 16,
@@ -172,6 +178,15 @@ class CartSummaryCard extends StatelessWidget {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: AppColors.burgundy,
+                                ),
+                              )
+                            : knownFeeMinor == null
+                            ? Text(
+                                '—',
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.muted,
                                 ),
                               )
                             : isFreeShipping

@@ -4,6 +4,9 @@ import 'package:warsha_commerce/features/shipping/data/models/governorate_model.
 
 abstract class ShippingRepository {
   Future<Either<Failure, List<GovernorateModel>>> getGovernorates();
+
+  /// Drops the cached prices and loads them again, so changes made in the ERP show up.
+  Future<Either<Failure, List<GovernorateModel>>> refreshGovernorates();
   Future<Either<Failure, Map<String, double>>> getGovernoratesMap();
   Future<Either<Failure, double>> getGovernoratePrice(String governorate);
 

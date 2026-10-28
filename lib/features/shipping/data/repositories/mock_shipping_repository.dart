@@ -44,17 +44,19 @@ class MockShippingRepository implements ShippingRepository {
 
   @override
   double? getCachedPrice(String governorate) {
-    final match = _mockGovernorates.firstWhere(
-      (g) => g.governorate == governorate,
-      orElse: () => const GovernorateModel(governorate: '', price: 80.0),
-    );
-    return match.price;
+    for (final g in _mockGovernorates) {
+      if (g.governorate == governorate) return g.price;
+    }
+    return null;
   }
 
   @override
   Future<Either<Failure, List<GovernorateModel>>> getGovernorates() async {
     return const Right(_mockGovernorates);
   }
+
+  @override
+  Future<Either<Failure, List<GovernorateModel>>> refreshGovernorates() => getGovernorates();
 
   @override
   Future<Either<Failure, Map<String, double>>> getGovernoratesMap() async {
@@ -65,6 +67,9 @@ class MockShippingRepository implements ShippingRepository {
 
   @override
   Future<Either<Failure, double>> getGovernoratePrice(String governorate) async {
-    return Right(getCachedPrice(governorate) ?? 80.0);
+    final price = getCachedPrice(governorate);
+    return price == null
+        ? const Left(ValidationFailure('المحافظة دي مش ضمن مناطق التوصيل'))
+        : Right(price);
   }
 }

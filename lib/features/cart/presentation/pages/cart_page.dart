@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_cubit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -28,6 +29,13 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Delivery prices are edited in the ERP: show the current ones
+    context.read<ShippingCubit>().refresh();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
 import 'package:warsha_commerce/core/theme/app_spacing.dart';
@@ -92,7 +93,9 @@ class CheckoutItemsPreview extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.product.name,
+                          item.variant == null
+                              ? item.product.localizedName(context)
+                              : '${item.product.localizedName(context)} (${item.variant!.localizedLabel(context)})',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.cairo(
@@ -103,7 +106,7 @@ class CheckoutItemsPreview extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${item.quantity} × ${MoneyUtils.formatMinor(item.product.totalPrice)}',
+                          '${item.quantity} × ${MoneyUtils.formatMinor(item.unitPrice)}',
                           style: GoogleFonts.cairo(
                             fontSize: 11.5,
                             color: AppColors.muted,

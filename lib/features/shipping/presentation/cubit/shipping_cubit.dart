@@ -1,4 +1,6 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:warsha_commerce/core/error/failures.dart';
 import 'package:warsha_commerce/features/shipping/data/models/governorate_model.dart';
 import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 import 'package:warsha_commerce/features/shipping/presentation/cubit/shipping_state.dart';
@@ -13,10 +15,19 @@ class ShippingCubit extends Cubit<ShippingState> {
     if (state.isSuccess && state.governorates.isNotEmpty) {
       return;
     }
-
     emit(state.copyWith(status: ShippingStatus.loading));
+    _emitResult(await shippingRepository.getGovernorates());
+  }
 
-    final result = await shippingRepository.getGovernorates();
+  /// Reloads prices from the server (they are edited in the ERP). Keeps the
+  /// current list on screen while loading.
+  Future<void> refresh() async {
+    final result = await shippingRepository.refreshGovernorates();
+    if (result.isLeft() && state.governorates.isNotEmpty) return;
+    _emitResult(result);
+  }
+
+  void _emitResult(Either<Failure, List<GovernorateModel>> result) {
 
     result.fold(
       (failure) {
@@ -42,14 +53,12 @@ class ShippingCubit extends Cubit<ShippingState> {
     );
   }
 
-  Future<double> fetchPriceForGovernorate(String governorate) async {
+  /// Delivery price for [governorate], or null when it isn't delivered to.
+  Future<double?> fetchPriceForGovernorate(String governorate) async {
     if (state.governoratesMap.containsKey(governorate)) {
       return state.governoratesMap[governorate]!;
     }
     final result = await shippingRepository.getGovernoratePrice(governorate);
-    return result.fold(
-      (_) => 80.0,
-      (price) => price,
-    );
+    return result.fold((_) => null, (price) => price);
   }
 }

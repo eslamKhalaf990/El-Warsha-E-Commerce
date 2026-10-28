@@ -1,5 +1,6 @@
 import 'package:warsha_commerce/features/catalog/domain/entities/category.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
+import 'package:warsha_commerce/features/catalog/domain/entities/product_variant.dart';
 
 final List<Category> mockCategories = [
   const Category(
@@ -62,6 +63,17 @@ final List<Product> mockProducts = [
     quantity: 5,
     categoryName: 'أساور',
     categoryId: 2,
+    // Gallery: swipe through the cover, then these
+    images: [
+      'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500',
+      'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=500',
+      'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=500',
+    ],
+    variants: [
+      ProductVariant(id: 21, size: 'S', price: 65000, totalPrice: 65000, quantity: 3),
+      ProductVariant(id: 22, size: 'M', price: 65000, totalPrice: 65000, quantity: 5),
+      ProductVariant(id: 23, size: 'L', price: 70000, totalPrice: 70000, quantity: 0),
+    ],
   ),
   // 3: Ring 350 (Cart item 3)
   const Product(

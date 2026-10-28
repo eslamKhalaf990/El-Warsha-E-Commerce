@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/di/di.dart';
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
@@ -208,7 +209,7 @@ class _ProductDetailsContentState extends State<_ProductDetailsContent> {
         ),
         const AppText.caption('/', color: AppColors.line),
         AppText.caption(
-          product.name,
+          product.localizedName(context),
           color: AppColors.deepWine,
           weight: FontWeight.w700,
           maxLines: 1,

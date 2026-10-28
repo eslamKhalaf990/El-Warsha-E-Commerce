@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
@@ -108,7 +109,7 @@ class _ProductDetailsTabsState extends State<ProductDetailsTabs> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppText.body(
-                product.description,
+                product.localizedDescription(context),
                 color: AppColors.deepWine.withValues(alpha: 0.9),
               ),
               const SizedBox(height: AppSpacing.s12),

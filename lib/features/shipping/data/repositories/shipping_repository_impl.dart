@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:warsha_commerce/core/error/failures.dart';
+import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/features/shipping/data/datasources/shipping_remote_datasource.dart';
 import 'package:warsha_commerce/features/shipping/data/models/governorate_model.dart';
 import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
@@ -26,9 +27,9 @@ class ShippingRepositoryImpl implements ShippingRepository {
       return _cachedMap![governorate];
     }
     // Arabic normalization fallback lookup
-    final normalizedSearch = _normalizeArabic(governorate);
+    final normalizedSearch = governorateKey(governorate);
     for (final entry in _cachedMap!.entries) {
-      if (_normalizeArabic(entry.key) == normalizedSearch) {
+      if (governorateKey(entry.key) == normalizedSearch) {
         return entry.value;
       }
     }
@@ -53,6 +54,21 @@ class ShippingRepositoryImpl implements ShippingRepository {
     } catch (e) {
       return Left(ServerFailure('فشل استرجاع قائمة المحافظات: ${e.toString()}'));
     }
+  }
+
+  @override
+  Future<Either<Failure, List<GovernorateModel>>> refreshGovernorates() async {
+    final previousList = _cachedGovernorates;
+    final previousMap = _cachedMap;
+    _cachedGovernorates = null;
+    _cachedMap = null;
+    final result = await getGovernorates();
+    if (result.isLeft()) {
+      // Keep showing the last known prices if the refresh fails
+      _cachedGovernorates = previousList;
+      _cachedMap = previousMap;
+    }
+    return result;
   }
 
   @override
@@ -110,14 +126,5 @@ class ShippingRepositoryImpl implements ShippingRepository {
       return ServerFailure(data['error'].toString());
     }
     return ServerFailure(e.message ?? 'حدث خطأ في الاتصال بقائمة أسعار الشحن');
-  }
-
-  String _normalizeArabic(String text) {
-    return text
-        .replaceAll(RegExp(r'[\u064B-\u0652]'), '') // remove tashkeel
-        .replaceAll(RegExp(r'[أإآ]'), 'ا')
-        .replaceAll('ى', 'ي')
-        .replaceAll('ة', 'ه')
-        .trim();
   }
 }

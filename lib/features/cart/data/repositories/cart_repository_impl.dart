@@ -1,12 +1,14 @@
 import 'dart:math';
 
 import 'package:dartz/dartz.dart';
+import 'package:warsha_commerce/core/error/failures.dart';
 import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
 import 'package:warsha_commerce/features/cart/data/datasources/cart_local_datasource.dart';
 import 'package:warsha_commerce/features/cart/domain/entities/cart_item.dart';
 import 'package:warsha_commerce/features/cart/domain/repositories/cart_repository.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
+import 'package:warsha_commerce/features/catalog/domain/entities/product_variant.dart';
 import 'package:warsha_commerce/features/catalog/domain/repositories/catalog_repository.dart';
 
 class CartRepositoryImpl implements CartRepository {
@@ -29,10 +31,11 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  int getShippingFee([String governorate = 'القاهرة']) {
+  int getShippingFee([String? governorate]) {
     if (_items.isEmpty) return 0;
-    final price = shippingRepository?.getCachedPrice(governorate) ??
-        Governorates.getPrice(governorate);
+    final gov = governorate ?? (Governorates.all.isEmpty ? '' : Governorates.all.first);
+    final price = shippingRepository?.getCachedPrice(gov) ??
+        Governorates.getPrice(gov) ?? 0;
     return (price * 100).round();
   }
 
@@ -84,10 +87,15 @@ class CartRepositoryImpl implements CartRepository {
             },
             (freshProduct) {
               // Update with latest backend product info (price, stock, image)
-              final cappedQty = freshProduct.quantity > 0
-                  ? min(item.quantity, freshProduct.quantity)
-                  : item.quantity;
-              reconciled.add(CartItem(product: freshProduct, quantity: cappedQty));
+              final freshVariant = freshProduct.variantById(item.variantId);
+              if (item.variantId != null && freshVariant == null) {
+                // The size/color was removed: keep the cached row, checkout will report it
+                reconciled.add(item);
+                return;
+              }
+              final stock = freshVariant?.quantity ?? freshProduct.quantity;
+              final cappedQty = stock > 0 ? min(item.quantity, stock) : item.quantity;
+              reconciled.add(CartItem(product: freshProduct, quantity: cappedQty, variant: freshVariant));
             },
           );
         }
@@ -107,13 +115,15 @@ class CartRepositoryImpl implements CartRepository {
   Future<Either<Failure, List<CartItem>>> addToCart(
     Product product, [
     int quantity = 1,
+    ProductVariant? variant,
   ]) async {
     try {
       final existingIndex = _items.indexWhere(
-        (item) => item.product.id == product.id,
+        (item) => item.isLine(product.id, variant?.id),
       );
 
-      final int maxStock = product.quantity > 0 ? product.quantity : 999;
+      final int stock = variant?.quantity ?? product.quantity;
+      final int maxStock = stock > 0 ? stock : 999;
 
       if (existingIndex >= 0) {
         final existing = _items[existingIndex];
@@ -121,10 +131,11 @@ class CartRepositoryImpl implements CartRepository {
         _items[existingIndex] = existing.copyWith(
           product: product,
           quantity: newQty,
+          variant: variant,
         );
       } else {
         final addQty = min(quantity, maxStock);
-        _items.add(CartItem(product: product, quantity: addQty));
+        _items.add(CartItem(product: product, quantity: addQty, variant: variant));
       }
 
       await _saveCurrentItems();
@@ -137,17 +148,18 @@ class CartRepositoryImpl implements CartRepository {
   @override
   Future<Either<Failure, List<CartItem>>> updateQuantity(
     int productId,
-    int quantity,
-  ) async {
+    int quantity, {
+    int? variantId,
+  }) async {
     try {
-      final index = _items.indexWhere((item) => item.product.id == productId);
+      final index = _items.indexWhere((item) => item.isLine(productId, variantId));
       if (index >= 0) {
         if (quantity <= 0) {
           _items.removeAt(index);
         } else {
           final current = _items[index];
-          final maxStock = current.product.quantity > 0
-              ? current.product.quantity
+          final maxStock = current.availableStock > 0
+              ? current.availableStock
               : 999;
           _items[index] = current.copyWith(
             quantity: min(quantity, maxStock),
@@ -162,9 +174,12 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  Future<Either<Failure, List<CartItem>>> removeFromCart(int productId) async {
+  Future<Either<Failure, List<CartItem>>> removeFromCart(
+    int productId, {
+    int? variantId,
+  }) async {
     try {
-      _items.removeWhere((item) => item.product.id == productId);
+      _items.removeWhere((item) => item.isLine(productId, variantId));
       await _saveCurrentItems();
       return Right(List.unmodifiable(_items));
     } catch (e) {

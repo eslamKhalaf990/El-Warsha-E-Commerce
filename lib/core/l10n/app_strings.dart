@@ -14,6 +14,8 @@ class AppStrings {
   // ---------------------------------------------------------------------------
   static const String mainCta = 'مستني إيه؟ اطلب دلوقتي';
   static const String addToCart = 'ضيف للسلة';
+  static const String chooseVariant = 'اختار المقاس / اللون';
+  static const String chooseVariantFirst = 'اختار المقاس أو اللون الأول';
   static const String addedToCart = 'اتضاف للسلة ✓';
   static const String continueToCheckout = 'كمّل طلبك';
   static const String confirmOrder = 'أكّد الطلب';
@@ -269,6 +271,23 @@ class AppStrings {
   static const String cartEmptyError = 'سلتك فاضية، ضيف منتجات عشان تكمل الطلب';
   static const String accountPending =
       'حسابك قيد المراجعة، هنبلّغك أول ما يتفعّل';
+
+  // Login / sign-up / OTP errors
+  static const String wrongCredentials =
+      'الإيميل أو الباسورد مش مظبوطين، راجعهم وجرّب تاني';
+  static const String accountInactive =
+      'حسابك متوقف حاليًا، كلّمنا وهنساعدك على طول';
+  static const String emailTaken =
+      'الإيميل ده متسجّل عندنا قبل كده، جرّب تسجّل دخول';
+  static const String invalidGovernorate = 'اختار المحافظة من القايمة';
+  static const String signUpFailed =
+      'مقدرناش نكمّل التسجيل، راجع بياناتك وجرّب تاني';
+  static const String otpSendFailed =
+      'مقدرناش نبعت الكود دلوقتي، جرّب كمان شوية';
+  static const String resetCodeFailed =
+      'مقدرناش نبعت كود الاسترجاع، اتأكد إن الإيميل صح وجرّب تاني';
+  static const String tooManyAttempts =
+      'محاولات كتير ورا بعض، استنى دقيقة وجرّب تاني';
 
   /// Maps domain failure objects to conversational, friendly Egyptian microcopy.
   static String failureMessage(Failure failure) {

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:warsha_commerce/features/cart/domain/repositories/cart_repository.dart';
 import 'package:warsha_commerce/features/cart/presentation/cubit/cart_state.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
+import 'package:warsha_commerce/features/catalog/domain/entities/product_variant.dart';
 
 class CartCubit extends Cubit<CartState> {
   final CartRepository cartRepository;
@@ -34,8 +35,8 @@ class CartCubit extends Cubit<CartState> {
     );
   }
 
-  Future<void> addToCart(Product product, [int quantity = 1]) async {
-    final result = await cartRepository.addToCart(product, quantity);
+  Future<void> addToCart(Product product, [int quantity = 1, ProductVariant? variant]) async {
+    final result = await cartRepository.addToCart(product, quantity, variant);
 
     result.fold(
       (failure) => emit(
@@ -58,8 +59,8 @@ class CartCubit extends Cubit<CartState> {
     );
   }
 
-  Future<void> updateQuantity(int productId, int quantity) async {
-    final result = await cartRepository.updateQuantity(productId, quantity);
+  Future<void> updateQuantity(int productId, int quantity, {int? variantId}) async {
+    final result = await cartRepository.updateQuantity(productId, quantity, variantId: variantId);
 
     result.fold(
       (failure) => emit(
@@ -82,8 +83,8 @@ class CartCubit extends Cubit<CartState> {
     );
   }
 
-  Future<void> removeFromCart(int productId) async {
-    final result = await cartRepository.removeFromCart(productId);
+  Future<void> removeFromCart(int productId, {int? variantId}) async {
+    final result = await cartRepository.removeFromCart(productId, variantId: variantId);
 
     result.fold(
       (failure) => emit(

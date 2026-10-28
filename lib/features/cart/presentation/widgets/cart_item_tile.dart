@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 
 import 'package:warsha_commerce/core/l10n/app_strings.dart';
+import 'package:warsha_commerce/core/l10n/product_text.dart';
 import 'package:warsha_commerce/core/theme/app_colors.dart';
 import 'package:warsha_commerce/core/theme/app_radius.dart';
 import 'package:warsha_commerce/core/theme/app_spacing.dart';
@@ -73,7 +74,7 @@ class CartItemTile extends StatelessWidget {
                                 const SizedBox(height: 2),
                               ],
                               Text(
-                                product.name,
+                                product.localizedName(context),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.cairo(
@@ -83,6 +84,15 @@ class CartItemTile extends StatelessWidget {
                                   height: 1.25,
                                 ),
                               ),
+                              if (item.variant != null)
+                                Text(
+                                  item.variant!.localizedLabel(context),
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.muted,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -98,6 +108,7 @@ class CartItemTile extends StatelessWidget {
                           onPressed: () {
                             context.read<CartCubit>().removeFromCart(
                               product.id,
+                              variantId: item.variantId,
                             );
                           },
                         ),
@@ -109,7 +120,7 @@ class CartItemTile extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          MoneyUtils.formatMinor(product.totalPrice),
+                          MoneyUtils.formatMinor(item.unitPrice),
                           style: GoogleFonts.cairo(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -119,7 +130,7 @@ class CartItemTile extends StatelessWidget {
                         if (product.hasDiscount) ...[
                           const SizedBox(width: AppSpacing.s8),
                           Text(
-                            MoneyUtils.formatMinor(product.sellingPrice),
+                            MoneyUtils.formatMinor(item.variant?.price ?? product.sellingPrice),
                             style: GoogleFonts.cairo(
                               fontSize: 11.5,
                               color: AppColors.muted,
@@ -138,18 +149,20 @@ class CartItemTile extends StatelessWidget {
                         // Quantity Stepper
                         QuantityStepper(
                           quantity: item.quantity,
-                          maxQuantity: product.quantity > 0
-                              ? product.quantity
+                          maxQuantity: item.availableStock > 0
+                              ? item.availableStock
                               : 99,
                           onChanged: (newQty) {
                             if (newQty <= 0) {
                               context.read<CartCubit>().removeFromCart(
                                 product.id,
+                                variantId: item.variantId,
                               );
                             } else {
                               context.read<CartCubit>().updateQuantity(
                                 product.id,
                                 newQty,
+                                variantId: item.variantId,
                               );
                             }
                           },

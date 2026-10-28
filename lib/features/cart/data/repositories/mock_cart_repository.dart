@@ -5,8 +5,10 @@ import 'package:warsha_commerce/core/config/mock_debug_state.dart';
 import 'package:warsha_commerce/core/error/failures.dart';
 import 'package:warsha_commerce/core/utils/governorates.dart';
 import 'package:warsha_commerce/features/shipping/domain/repositories/shipping_repository.dart';
+import 'package:warsha_commerce/features/cart/domain/entities/cart_item.dart';
 import 'package:warsha_commerce/features/cart/domain/repositories/cart_repository.dart';
 import 'package:warsha_commerce/features/catalog/domain/entities/product.dart';
+import 'package:warsha_commerce/features/catalog/domain/entities/product_variant.dart';
 
 class MockCartRepository implements CartRepository {
   final MockDebugController _debugController;
@@ -41,10 +43,11 @@ class MockCartRepository implements CartRepository {
   }
 
   @override
-  int getShippingFee([String governorate = 'القاهرة']) {
+  int getShippingFee([String? governorate]) {
     if (_items.isEmpty) return 0;
-    final price = shippingRepository?.getCachedPrice(governorate) ??
-        Governorates.getPrice(governorate);
+    final gov = governorate ?? (Governorates.all.isEmpty ? '' : Governorates.all.first);
+    final price = shippingRepository?.getCachedPrice(gov) ??
+        Governorates.getPrice(gov) ?? 0;
     return (price * 100).round();
   }
 
@@ -98,6 +101,7 @@ class MockCartRepository implements CartRepository {
   Future<Either<Failure, List<CartItem>>> addToCart(
     Product product, [
     int quantity = 1,
+    ProductVariant? variant,
   ]) async {
     await _simulateLatency();
 
@@ -108,7 +112,7 @@ class MockCartRepository implements CartRepository {
       case MockRepoState.loading:
       case MockRepoState.normal:
         final existingIndex = _items.indexWhere(
-          (item) => item.product.id == product.id,
+          (item) => item.isLine(product.id, variant?.id),
         );
         if (existingIndex >= 0) {
           final existing = _items[existingIndex];
@@ -116,7 +120,7 @@ class MockCartRepository implements CartRepository {
             quantity: existing.quantity + quantity,
           );
         } else {
-          _items.add(CartItem(product: product, quantity: quantity));
+          _items.add(CartItem(product: product, quantity: quantity, variant: variant));
         }
         return Right(List.unmodifiable(_items));
     }
@@ -125,8 +129,9 @@ class MockCartRepository implements CartRepository {
   @override
   Future<Either<Failure, List<CartItem>>> updateQuantity(
     int productId,
-    int quantity,
-  ) async {
+    int quantity, {
+    int? variantId,
+  }) async {
     await _simulateLatency();
 
     switch (_debugController.state) {
@@ -135,7 +140,7 @@ class MockCartRepository implements CartRepository {
       case MockRepoState.empty:
       case MockRepoState.loading:
       case MockRepoState.normal:
-        final index = _items.indexWhere((item) => item.product.id == productId);
+        final index = _items.indexWhere((item) => item.isLine(productId, variantId));
         if (index >= 0) {
           if (quantity <= 0) {
             _items.removeAt(index);
@@ -148,7 +153,10 @@ class MockCartRepository implements CartRepository {
   }
 
   @override
-  Future<Either<Failure, List<CartItem>>> removeFromCart(int productId) async {
+  Future<Either<Failure, List<CartItem>>> removeFromCart(
+    int productId, {
+    int? variantId,
+  }) async {
     await _simulateLatency();
 
     switch (_debugController.state) {
@@ -157,7 +165,7 @@ class MockCartRepository implements CartRepository {
       case MockRepoState.empty:
       case MockRepoState.loading:
       case MockRepoState.normal:
-        _items.removeWhere((item) => item.product.id == productId);
+        _items.removeWhere((item) => item.isLine(productId, variantId));
         return Right(List.unmodifiable(_items));
     }
   }
