@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart' show ImageRenderMethodForWeb;
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -121,6 +122,9 @@ class ProductImage extends StatelessWidget {
           height: height,
           fit: fit,
           memCacheWidth: 600,
+          // Decode in Flutter: the default (HtmlImage) paints black for a moment
+          // each time a photo scrolls back on screen.
+          imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
           placeholder: (context, _) => _buildPlaceholder(isLoading: true),
           errorWidget: (context, url, error) => _buildFallbackImage(),
         ),
