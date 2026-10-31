@@ -48,10 +48,15 @@ class ApiConstants {
   static String feedbackComments(int id) => '/feedbacks/$id/comments';
 
   /// Resolves an image URL into a displayable HTTP URL.
+  /// Server images (`/images/<filename>`) are served by the backend at [baseUrl].
   /// If the URL is a Google Drive link, extracts the file ID and prefixes with [baseURLImages].
   /// If the URL is a relative path, prefixes with [baseUrl].
   static String imageUrl(String path) {
     if (path.isEmpty) return path;
+
+    if (path.startsWith('/images/')) {
+      return '$baseUrl$path';
+    }
 
     // Check if path is a Google Drive link or contains a file ID
     final fileId = ImageHelper.extractFileId(path);
